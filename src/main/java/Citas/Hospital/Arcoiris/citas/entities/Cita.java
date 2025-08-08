@@ -22,7 +22,7 @@ public class Cita {
     private LocalDateTime dateTime;
 
     @Column(name = "motivo_consulta", nullable = false, length = 80)
-    private String reasonConsultation;
+    private String reasonForConsultation;
 
     @ManyToOne
     @JoinColumn(name = "id_paciente", nullable = false)
@@ -31,8 +31,4 @@ public class Cita {
     @ManyToOne
     @JoinColumn(name = "id_medico", nullable = false)
     private Medico medico;
-
-
-
-
 }
