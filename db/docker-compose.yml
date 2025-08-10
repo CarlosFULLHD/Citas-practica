@@ -1,0 +1,15 @@
+services:
+  citas-medicas:
+    image: postgres:17
+    container_name: citas-medicas
+    environment:
+      POSTGRES_DB: citasdb
+      POSTGRES_USER: arcoiris
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5454:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
