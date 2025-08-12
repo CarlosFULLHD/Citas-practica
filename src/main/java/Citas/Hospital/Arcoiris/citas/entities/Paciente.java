@@ -26,7 +26,7 @@ public class Paciente {
     @Column(name = "apellidos", nullable = false, length = 50)
     private String lastname;
 
-    @Column(name = "dni", nullable = false, unique = true, length = 8)
+    @Column(name = "dni", nullable = false, unique = true, length = 9)
     private String dni;
 
     @Column(name = "fecha_nacimiento", nullable = false)

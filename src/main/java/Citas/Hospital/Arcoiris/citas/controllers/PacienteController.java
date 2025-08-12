@@ -17,9 +17,16 @@ public class PacienteController {
     }
     //Crear paciente
     @PostMapping
-    public ResponseEntity<PacienteDto> createPaciente(@Valid @RequestBody PacienteDto pacienteDto){
-        PacienteDto create = pacienteService.createPaciente(pacienteDto);
-        return ResponseEntity.status(201).body(create);
+    public ResponseEntity<?> createPaciente(@Valid @RequestBody PacienteDto pacienteDto) {
+        try {
+            PacienteDto create = pacienteService.createPaciente(pacienteDto);
+            return ResponseEntity.status(201).body(create);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error intermo: " + e.getMessage());
+        }
     }
     //Obtener todos los pacientes
     @GetMapping
