@@ -1,12 +1,13 @@
 package Citas.Hospital.Arcoiris.citas.controllers;
 
 import Citas.Hospital.Arcoiris.citas.dto.PacienteDto;
+import Citas.Hospital.Arcoiris.citas.dto.ResponseGlobalDto;
 import Citas.Hospital.Arcoiris.citas.interfacesService.InterfacePaciente;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/pacientes")
@@ -17,43 +18,111 @@ public class PacienteController {
     }
     //Crear paciente
     @PostMapping
-    public ResponseEntity<?> createPaciente(@Valid @RequestBody PacienteDto pacienteDto) {
+    public ResponseEntity<ResponseGlobalDto> createPaciente(@Valid @RequestBody PacienteDto pacienteDto) {
         try {
-            PacienteDto create = pacienteService.createPaciente(pacienteDto);
-            return ResponseEntity.status(201).body(create);
+            ResponseGlobalDto response = pacienteService.createPaciente(pacienteDto);
+            return ResponseEntity.status(response.getCodigo()).body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            ResponseGlobalDto responseError = new ResponseGlobalDto(
+                    e.getMessage(),
+                    400,
+                    "/api/pacientes",
+                    LocalDateTime.now(),
+                    null
+            );
+            return ResponseEntity.badRequest().body(responseError);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error intermo: " + e.getMessage());
+            ResponseGlobalDto responseError = new ResponseGlobalDto(
+                    "Error interno: " + e.getMessage(),
+                    500,
+                    "/api/pacientes",
+                    LocalDateTime.now(),
+                    null
+            );
+            return ResponseEntity.status(500).body(responseError);
         }
     }
     //Obtener todos los pacientes
     @GetMapping
-    public ResponseEntity<List<PacienteDto>> getAllPacientes(){
-        List<PacienteDto> pacientes = pacienteService.getAllPacientes();
-        return ResponseEntity.ok(pacientes);
+    public ResponseEntity<ResponseGlobalDto> getAllPacientes(){
+        ResponseGlobalDto response = pacienteService.getAllPacientes();
+        return ResponseEntity.status(response.getCodigo()).body(response);
     }
     //Obtener paciente por Id
     @GetMapping("/{id}")
-    public ResponseEntity<PacienteDto> getPacienteById(@PathVariable Long id){
-        PacienteDto pacienteDto = pacienteService.getPacienteById(id);
-        if(pacienteDto == null){
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<ResponseGlobalDto> getPacienteById(@PathVariable Long id){
+        try{
+            ResponseGlobalDto response = pacienteService.getPacienteById(id);
+            return ResponseEntity.status(response.getCodigo()).body(response);
+        }catch (IllegalArgumentException e){
+            return ResponseEntity.badRequest().body(new ResponseGlobalDto(
+                    e.getMessage(),
+                    400,
+                    "paciente/{id}",
+                    LocalDateTime.now(),
+                    null
+            ));
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ResponseGlobalDto(
+                    "Paciente con id no encontrado: " + e.getMessage(),
+                    500,
+                    "paciente/{id}",
+                    LocalDateTime.now(),
+                    null
+            ));
         }
-        return ResponseEntity.ok(pacienteDto);
     }
     //Actualizar paciente
     @PutMapping("/{id}")
-    public ResponseEntity<PacienteDto> updatePaciente(@PathVariable Long id, @Valid
+    public ResponseEntity<ResponseGlobalDto> updatePaciente(@PathVariable Long id, @Valid
                                                       @RequestBody PacienteDto pacienteDto){
-        PacienteDto pacienteActu = pacienteService.updatePaciente(id,pacienteDto);
-        return ResponseEntity.ok(pacienteActu);
+        try {
+            ResponseGlobalDto response = pacienteService.updatePaciente(id, pacienteDto);
+            return ResponseEntity.status(response.getCodigo()).body(response);
+        }catch (IllegalArgumentException e){
+            return ResponseEntity.badRequest().body(new ResponseGlobalDto(
+                    e.getMessage(),
+                    400,
+                    "paciente/{id}",
+                    LocalDateTime.now(),
+                    null
+            ));
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ResponseGlobalDto(
+                    "Error interno " + e.getMessage(),
+                    500,
+                    "paciente/{id}",
+                    LocalDateTime.now(),
+                    null
+            ));
+        }
     }
     //Eliminar paciente
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePaciente(@PathVariable Long id){
-        pacienteService.deletePaciente(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ResponseGlobalDto> deletePaciente(@PathVariable Long id){
+        try{
+            ResponseGlobalDto response = pacienteService.deletePaciente(id);
+            return ResponseEntity.status(response.getCodigo()).body(response);
+        }catch (IllegalArgumentException e){
+            return ResponseEntity.badRequest().body(new ResponseGlobalDto(
+                    e.getMessage(),
+                    400,
+                    "paciente/{id}",
+                    LocalDateTime.now(),
+                    null
+            ));
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.status(404).body(new ResponseGlobalDto(
+                    "Error al eliminar paciente " + e.getMessage(),
+                    404,
+                    "paciente/{id}",
+                    LocalDateTime.now(),
+                    null
+            ));
+        }
     }
 }

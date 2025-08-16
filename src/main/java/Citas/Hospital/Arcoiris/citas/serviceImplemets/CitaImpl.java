@@ -1,6 +1,7 @@
 package Citas.Hospital.Arcoiris.citas.serviceImplemets;
 
 import Citas.Hospital.Arcoiris.citas.dto.CitaDto;
+import Citas.Hospital.Arcoiris.citas.dto.ResponseGlobalDto;
 import Citas.Hospital.Arcoiris.citas.entities.Cita;
 import Citas.Hospital.Arcoiris.citas.entities.Medico;
 import Citas.Hospital.Arcoiris.citas.entities.Paciente;
@@ -28,10 +29,16 @@ public class CitaImpl implements InterfaceCita {
     }
     //Crear cita
     @Override
-    public CitaDto createCita(CitaDto citaDto){
+    public ResponseGlobalDto createCita(CitaDto citaDto){
         //Validar fecha
         if(citaDto.getDateTime() == null || citaDto.getDateTime().isBefore(LocalDateTime.now())){
-            throw new IllegalArgumentException("Fecha debe ser futura");
+            return new ResponseGlobalDto(
+                    "Fecha debe ser futura",
+                    400,
+                    "implements/cita",
+                    LocalDateTime.now(),
+                    null
+            );
         }
         //Validar existencia de paciente
         Paciente paciente = pacienteRepository.findById(citaDto.getPacienteId())
@@ -41,7 +48,13 @@ public class CitaImpl implements InterfaceCita {
                 .orElseThrow(()-> new IllegalArgumentException("Medico no encontrado"));
         //Validar que el médico tega dos citas al mismo tiempo
         if(citaRepository.existsByMedicoIdAndDateTime(citaDto.getMedicoId(), citaDto.getDateTime())){
-            throw new IllegalArgumentException("El medico ya tine una cita a esa hora");
+            return new ResponseGlobalDto(
+                    "El medico ya tine una cita a esa hora",
+                    400,
+                    "implements/cita",
+                    LocalDateTime.now(),
+                    null
+            );
         }
         //Mapear DTO a entidad
         Cita cita = new Cita();
@@ -52,18 +65,25 @@ public class CitaImpl implements InterfaceCita {
         //Guardar
         Cita citaGuardada = citaRepository.save(cita);
         //Mapear Dto para devolver
-        return new CitaDto(
+        CitaDto responseDto = new CitaDto(
                 citaGuardada.getDateTime(),
                 citaGuardada.getReasonForConsultation(),
                 paciente.getId(),
                 medico.getId()
         );
+        return new ResponseGlobalDto(
+                "Cita creada correctamente",
+                201,
+                "implements/cita",
+                LocalDateTime.now(),
+                responseDto
+        );
     }
     //Obtener todas las citas
     @Override
-    public List<CitaDto> getAllCitas(){
+    public ResponseGlobalDto getAllCitas(){
         List<Cita> citas = citaRepository.findAll();
-        return citas.stream()
+        List<CitaDto> lista = citas.stream()
                 .map(cita -> new CitaDto(
                         cita.getDateTime(),
                         cita.getReasonForConsultation(),
@@ -71,27 +91,47 @@ public class CitaImpl implements InterfaceCita {
                         cita.getMedico().getId()
                 ))
                 .collect(Collectors.toList());
+        return new ResponseGlobalDto(
+                "Lista de citas obtenida correctamente",
+                200,
+                "implements/cita",
+                LocalDateTime.now(),
+                lista
+        );
     }
     //Obtener cita por su Id
     @Override
-    public CitaDto getByIdCita(Long id){
+    public ResponseGlobalDto getByIdCita(Long id){
         Cita cita = citaRepository.findById(id)
                 .orElseThrow(()-> new RuntimeException("Cita no existe"));
-        return new CitaDto(
+        CitaDto dto = new CitaDto(
                 cita.getDateTime(),
                 cita.getReasonForConsultation(),
                 cita.getPaciente().getId(),
                 cita.getMedico().getId()
         );
+        return new ResponseGlobalDto(
+                "Cita encontrada correctamente",
+                200,
+                "implements/cita",
+                LocalDateTime.now(),
+                dto
+        );
     }
     //Modificar cita
     @Override
-    public CitaDto updateCita(Long id, CitaDto citaActu){
+    public ResponseGlobalDto updateCita(Long id, CitaDto citaActu){
         Cita cita = citaRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Cita no exite"));
+                .orElseThrow(()-> new RuntimeException("La cita no exite"));
         //Validar nueva fecha
         if(citaActu.getDateTime() == null || citaActu.getDateTime().isBefore(LocalDateTime.now())) {
-           throw new IllegalArgumentException("La cita de la fecha debe ser futura");
+           return new ResponseGlobalDto(
+                   "La cita de la fecha debe ser futura",
+                   400,
+                   "implements/cita",
+                   LocalDateTime.now(),
+                   null
+           );
         }
         //Validar paciente
         Paciente paciente = pacienteRepository.findById(citaActu.getPacienteId())
@@ -101,11 +141,16 @@ public class CitaImpl implements InterfaceCita {
                 .orElseThrow(()-> new RuntimeException("Medico no encontrado"));
         //Validar que no haya otra cita con el mismo médico y fecha
         boolean conflicto = citaRepository.existsByMedicoIdAndDateTime(medico.getId(),citaActu.getDateTime())
-                && !cita.getId().equals(id);
+                && !cita.getDateTime().equals(citaActu.getDateTime());
         if(conflicto){
-            throw new IllegalArgumentException("El medico ya tiene una cita a esa hora");
+            return new ResponseGlobalDto(
+                    "El medico ya tiene una cita a esa hora",
+                    400,
+                    "implements/cita",
+                    LocalDateTime.now(),
+                    null
+            );
         }
-
         cita.setDateTime(citaActu.getDateTime());
         cita.setReasonForConsultation(citaActu.getReasonForConsultation());
         cita.setPaciente(paciente);
@@ -113,21 +158,38 @@ public class CitaImpl implements InterfaceCita {
 
         Cita citaActualizada = citaRepository.save(cita);
 
-        return new CitaDto(
+        CitaDto dto = new CitaDto(
                 citaActualizada.getDateTime(),
                 citaActualizada.getReasonForConsultation(),
                 citaActualizada.getPaciente().getId(),
                 citaActualizada.getMedico().getId()
         );
+        return new ResponseGlobalDto(
+                "Cita actualizada correctamente",
+                200,
+                "implements/cita",
+                LocalDateTime.now(),
+                dto
+        );
     }
     //Borrar cita
     @Override
-    public void deleteCita(Long id){
+    public ResponseGlobalDto deleteCita(Long id){
         if(!citaRepository.existsById(id)){
-            throw new RuntimeException("Cita no encontrada");
+            return new ResponseGlobalDto(
+                    "Cita no encontrada",
+                    404,
+                    "implements/cita",
+                    LocalDateTime.now(),
+                    null);
         }
         citaRepository.deleteById(id);
+        return new ResponseGlobalDto(
+                "Cita eliminada correctamente",
+                200,
+                "implements/cita",
+                LocalDateTime.now(),
+                null
+        );
     }
-
-    
 }

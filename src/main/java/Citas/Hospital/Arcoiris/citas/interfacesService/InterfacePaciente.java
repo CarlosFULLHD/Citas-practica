@@ -1,15 +1,12 @@
 package Citas.Hospital.Arcoiris.citas.interfacesService;
 
 import Citas.Hospital.Arcoiris.citas.dto.PacienteDto;
-import Citas.Hospital.Arcoiris.citas.entities.Paciente;
-
-import java.util.List;
-import java.util.Optional;
+import Citas.Hospital.Arcoiris.citas.dto.ResponseGlobalDto;
 
 public interface InterfacePaciente {
-    PacienteDto createPaciente(PacienteDto pacienteDto);
-    List<PacienteDto> getAllPacientes();
-    PacienteDto getPacienteById(Long id);
-    PacienteDto updatePaciente(Long id, PacienteDto pacienteActu);
-    void deletePaciente(Long id);
+    ResponseGlobalDto createPaciente(PacienteDto pacienteDto);
+    ResponseGlobalDto getAllPacientes();
+    ResponseGlobalDto getPacienteById(Long id);
+    ResponseGlobalDto updatePaciente(Long id, PacienteDto pacienteActu);
+    ResponseGlobalDto deletePaciente(Long id);
 }

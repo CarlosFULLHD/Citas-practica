@@ -1,12 +1,14 @@
 package Citas.Hospital.Arcoiris.citas.serviceImplemets;
 
 import Citas.Hospital.Arcoiris.citas.dto.PacienteDto;
+import Citas.Hospital.Arcoiris.citas.dto.ResponseGlobalDto;
 import Citas.Hospital.Arcoiris.citas.entities.Paciente;
 import Citas.Hospital.Arcoiris.citas.interfacesService.InterfacePaciente;
 import Citas.Hospital.Arcoiris.citas.repositories.PacienteRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,22 +20,45 @@ public class PacienteImpl implements InterfacePaciente {
     }
     //Crear un paciente
     @Override
-    public PacienteDto createPaciente(PacienteDto pacienteDto) {
+    public ResponseGlobalDto createPaciente(PacienteDto pacienteDto) {
         //si DNI ya está registrado
         if(pacienteRepository.findByDni(pacienteDto.getDni()).isPresent()){
-            throw new IllegalArgumentException("DNI ya registrado");
+            return new ResponseGlobalDto(
+                    "El DNI ya esta registrado",
+                    400,
+                    "implements/paciente",
+                    LocalDateTime.now(),
+                    null
+            );
         }
         //si correo electrónico ya está registrado
         if(pacienteRepository.findByEmail(pacienteDto.getEmail()).isPresent()){
-             throw  new IllegalArgumentException("Email ya registrado");
+             return new ResponseGlobalDto(
+                     "Email ya registrado",
+                     400,
+                     "implements/paciente",
+                     LocalDateTime.now(),
+                     null
+                     );
         }
         //si numero de teléfono ya está registrado
         if(pacienteRepository.findByPhoneNumber(pacienteDto.getPhoneNumber()).isPresent()){
-            throw new IllegalArgumentException("Teléfono ya registrado");
+            return new ResponseGlobalDto(
+                    "Teléfono ya registrado",
+                    400,
+                    "implements/paciente",
+                    LocalDateTime.now(),
+                    null
+            );
         }
         //fecha de nacimiento no puede estar en el futuro
         if(pacienteDto.getDateBirth().isAfter(LocalDate.now())){
-            throw new IllegalArgumentException("La fecha de nacimiento no puede estar en el futuro");
+            return new ResponseGlobalDto(
+                    "La fecha de nacimiento no puede estar en el futuro",
+                    400,
+                    "Implements/paciente",
+                    LocalDateTime.now(),
+                    null);
         }
         Paciente paciente = new Paciente();
         paciente.setName(pacienteDto.getName());
@@ -44,7 +69,7 @@ public class PacienteImpl implements InterfacePaciente {
         paciente.setEmail(pacienteDto.getEmail());
 
         Paciente saved = pacienteRepository.save(paciente);
-        return  new PacienteDto(
+        PacienteDto responseDto = new PacienteDto(
                 saved.getName(),
                 saved.getLastname(),
                 saved.getDni(),
@@ -52,12 +77,19 @@ public class PacienteImpl implements InterfacePaciente {
                 saved.getPhoneNumber(),
                 saved.getEmail()
         );
+        return new ResponseGlobalDto(
+                "Paciente creado correctamente",
+                201,
+                "implements/paciente",
+                LocalDateTime.now(),
+                responseDto
+        );
     }
     //Obtener todos los pacientes
     @Override
-    public List<PacienteDto> getAllPacientes() {
+    public ResponseGlobalDto getAllPacientes() {
         List<Paciente>pacientes = pacienteRepository.findAll();
-        return pacientes.stream()
+        List<PacienteDto> lista = pacientes.stream()
                 .map(paciente -> new PacienteDto(
                         paciente.getName(),
                         paciente.getLastname(),
@@ -67,13 +99,20 @@ public class PacienteImpl implements InterfacePaciente {
                         paciente.getEmail()
                         ))
                 .collect(Collectors.toList());
+        return new ResponseGlobalDto(
+                "Lista de pacientes obtenido correctamente",
+                200,
+                "implements/paciente",
+                LocalDateTime.now(),
+                lista
+        );
     }
     //Obtener paciente por Id
     @Override
-    public PacienteDto getPacienteById(Long id) {
+    public ResponseGlobalDto getPacienteById(Long id) {
         Paciente paciente = pacienteRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Paciente no existe"));
-        return new PacienteDto(
+                .orElseThrow(()-> new IllegalArgumentException("Paciente no existe"));
+        PacienteDto dto = new PacienteDto(
                 paciente.getName(),
                 paciente.getLastname(),
                 paciente.getDni(),
@@ -81,19 +120,31 @@ public class PacienteImpl implements InterfacePaciente {
                 paciente.getPhoneNumber(),
                 paciente.getEmail()
         );
+        return new ResponseGlobalDto(
+                "Paciente encontrado correctamente",
+                200,
+                "implements/paciente",
+                LocalDateTime.now(),
+                dto
+        );
     }
     //Modificar paciente
     @Override
-    public PacienteDto updatePaciente(Long id, PacienteDto pacienteActu) {
+    public ResponseGlobalDto updatePaciente(Long id, PacienteDto pacienteActu) {
         Paciente paciente = pacienteRepository.findById(id)
                 .orElseThrow(()-> new RuntimeException("Paciente a modificar no existe"));
         //Validar fecha de nacimiento no puede ser futura
         if (pacienteActu.getDateBirth().isAfter(LocalDate.now())){
-            throw new IllegalArgumentException("La fecha de nacimiento no puede ser futura");
+            return new ResponseGlobalDto(
+                    "La fecha de nacimiento no puede ser futura",
+                    400,
+                    "implements/paciente",
+                    LocalDateTime.now(),
+                    null);
         }
         // Validar duplicado de DNI
         pacienteRepository.findByDni(pacienteActu.getDni()).ifPresent(existing->{
-            if(!existing.getId().equals(id)){
+            if(!existing.getId().equals(id)) {
                 throw new IllegalArgumentException("El DNI pertenece a otro paciente");
             }
         });
@@ -119,7 +170,7 @@ public class PacienteImpl implements InterfacePaciente {
 
     Paciente update = pacienteRepository.save(paciente);
 
-    return new PacienteDto(
+    PacienteDto dto = new PacienteDto(
             update.getName(),
             update.getLastname(),
             update.getDni(),
@@ -127,13 +178,32 @@ public class PacienteImpl implements InterfacePaciente {
             update.getPhoneNumber(),
             update.getEmail()
     );
+    return new ResponseGlobalDto(
+            "Paciente actualizado correctamente",
+            200,
+            "implements/paciente",
+            LocalDateTime.now(),
+            dto
+    );
     }
     //Borrar paciente
     @Override
-    public void deletePaciente(Long id) {
+    public ResponseGlobalDto deletePaciente(Long id) {
         if(!pacienteRepository.existsById(id)){
-            throw new RuntimeException("Paciente no encontrado");
+            return new ResponseGlobalDto(
+                    "Paciente no encontrado",
+                    404,
+                    "implements/paciente",
+                    LocalDateTime.now(),
+                    null);
         }
         pacienteRepository.deleteById(id);
+        return new ResponseGlobalDto(
+                "Paciente eliminado corectamente",
+                200,
+                "implements/paciente",
+                LocalDateTime.now(),
+                null
+        );
     }
 }
